@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>edu.unisabana.tyvs</groupId>
+  <artifactId>registraduria</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <name>registraduria</name>
+  <description>Taller de Pruebas de Seguridad (shift-left) - Testing y Validacion de Software</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+    <spring-boot.version>2.7.18</spring-boot.version>
+    <spotbugs.plugin.version>4.8.6.4</spotbugs.plugin.version>
+    <findsecbugs.version>1.13.0</findsecbugs.version>
+    <dependency-check.version>10.0.4</dependency-check.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Necesaria para @Valid sobre @RequestBody. Desde Spring Boot 2.3 ya no
+         viene incluida en spring-boot-starter-web. Sin ella las anotaciones
+         de validacion se ignoran EN SILENCIO, que es justo el peor modo de
+         fallo posible para un control de seguridad. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- Actuator: se incluye a proposito porque es una superficie expuesta
+         real y el modulo 2 comprueba que no revele de mas. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>2.2.224</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <release>17</release>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- ==================================================================
+           MODULO 3 — SAST (analisis estatico de seguridad)
+
+           SpotBugs analiza el bytecode buscando patrones defectuosos.
+           findsecbugs es un plugin que le anade ~130 reglas especificamente
+           de seguridad: inyeccion SQL y de comandos, criptografia debil,
+           XXE, deserializacion insegura, path traversal.
+
+           Se engancha a `verify` con el goal `check`, no `spotbugs`: `check`
+           ROMPE el build cuando encuentra algo. Un informe que nadie mira no
+           cambia el codigo; un build en rojo, si. Eso es "shift-left" en la
+           practica, y no un informe mensual que llega cuando ya se desplego.
+
+           `threshold=Low` e `includeTests=false`: se quiere sensibilidad alta
+           en el codigo de produccion, y no ruido del codigo de prueba.
+           ================================================================== -->
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${spotbugs.plugin.version}</version>
+        <configuration>
+          <effort>Max</effort>
+          <threshold>Low</threshold>
+          <includeTests>false</includeTests>
+          <excludeFilterFile>${project.basedir}/spotbugs-exclude.xml</excludeFilterFile>
+          <plugins>
+            <plugin>
+              <groupId>com.h3xstream.findsecbugs</groupId>
+              <artifactId>findsecbugs-plugin</artifactId>
+              <version>${findsecbugs.version}</version>
+            </plugin>
+          </plugins>
+        </configuration>
+        <executions>
+          <!-- (a) INFORME COMPLETO, SIN EXCLUSIONES, antes de las pruebas.
+
+               Produce target/spotbugs-sin-exclusiones.xml, que es lo que lee
+               SastDetectaLaVulnerabilidadTest para comprobar que la
+               herramienta encuentra el defecto que le sembramos.
+
+               Va en process-classes (antes de `test`) precisamente para que
+               esa prueba pueda leerlo. Y se genera SIN el filtro de
+               exclusiones: si usara el mismo filtro que `check`, la clase
+               vulnerable estaria excluida y la prueba no podria comprobar
+               nada.
+
+               Coste: el analisis corre dos veces, unos 30 segundos mas de
+               build. Se acepta a proposito. Un analizador en el que nadie ha
+               comprobado que detecta algo es una casilla marcada, no un
+               control. -->
+          <execution>
+            <id>informe-sin-exclusiones</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>spotbugs</goal>
+            </goals>
+            <configuration>
+              <excludeFilterFile combine.self="override"/>
+              <spotbugsXmlOutputFilename>spotbugs-sin-exclusiones.xml</spotbugsXmlOutputFilename>
+            </configuration>
+          </execution>
+
+          <!-- (b) PUERTA DE CALIDAD. Aqui si aplican las exclusiones
+               justificadas de spotbugs-exclude.xml, y el build se rompe con
+               cualquier hallazgo que no este justificado por escrito. -->
+          <execution>
+            <id>analisis-de-seguridad</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- ====================================================================
+         MODULO 4 — SCA (analisis de dependencias)
+
+         Va en un perfil aparte, y no en el build por defecto, por una razon
+         concreta y no por comodidad: dependency-check descarga la base de
+         datos de vulnerabilidades del NVD, que son cientos de megas, y desde
+         2023 el NVD exige una clave de API para no aplicar limites de
+         peticiones severos. Meterlo en el build normal significaria que un
+         `mvn verify` recien clonado tarda 20 minutos o falla por red.
+
+         En un proyecto real esto vive en un job nocturno, no en el build de
+         cada commit, exactamente por lo mismo.
+
+         Uso:
+           mvn -Psca verify -Dnvd.api.key=SU_CLAVE
+
+         Obtenga la clave gratis en https://nvd.nist.gov/developers/request-an-api-key
+         ==================================================================== -->
+    <profile>
+      <id>sca</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <version>${dependency-check.version}</version>
+            <configuration>
+              <nvdApiKey>${nvd.api.key}</nvdApiKey>
+              <!-- CVSS 7.0 = "alta". Por debajo se registra pero no rompe. -->
+              <failBuildOnCVSS>7</failBuildOnCVSS>
+              <formats>
+                <format>HTML</format>
+                <format>JSON</format>
+              </formats>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+</project>

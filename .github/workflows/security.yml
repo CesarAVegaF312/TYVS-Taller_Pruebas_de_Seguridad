@@ -1,0 +1,99 @@
+name: Seguridad
+
+# Dos disparadores, dos propositos distintos, y la diferencia es el modulo 4
+# del taller:
+#
+#   push / pull_request -> lo rapido: pruebas de abuso + SAST. Tiene que
+#                          responder en minutos o la gente deja de mirarlo.
+#   schedule            -> lo lento: analisis de dependencias. No depende de
+#                          que usted toque el codigo: depende de que alguien,
+#                          en algun sitio, publique un CVE nuevo. Un proyecto
+#                          sin un solo commit en seis meses puede volverse
+#                          vulnerable mientras duerme.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    # Todos los lunes a las 6:00 UTC.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Puerta rapida: casos de abuso + analisis estatico.
+  # ---------------------------------------------------------------------------
+  pruebas-y-sast:
+    name: Casos de abuso y SAST
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: maven
+
+      # `verify` incluye la puerta de SpotBugs: si aparece un hallazgo que no
+      # este justificado por escrito en spotbugs-exclude.xml, esto se pone rojo.
+      - name: Ejecutar pruebas y analisis estatico
+        run: mvn -B clean verify
+        working-directory: registraduria
+
+      # El informe se sube SIEMPRE, tambien cuando el paso anterior falla:
+      # es justo cuando hace falta leerlo.
+      - name: Publicar informe de SpotBugs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-spotbugs
+          path: registraduria/target/spotbugs*.xml
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # Analisis de dependencias. Solo en el job semanal y a peticion.
+  # ---------------------------------------------------------------------------
+  dependencias:
+    name: SCA (dependencias vulnerables)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: maven
+
+      # La base del NVD son cientos de megas. Sin cache, cada ejecucion la
+      # descarga entera.
+      - name: Cachear la base del NVD
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: nvd-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: nvd-${{ runner.os }}-
+
+      # NVD_API_KEY es un secreto del repositorio. Sin el, el NVD aplica
+      # limites de peticiones tan severos que la descarga tarda horas.
+      # Se obtiene gratis en https://nvd.nist.gov/developers/request-an-api-key
+      - name: Analizar dependencias
+        run: mvn -B -Psca verify -DskipTests -Dnvd.api.key=${{ secrets.NVD_API_KEY }}
+        working-directory: registraduria
+
+      - name: Publicar informe de dependencias
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-dependencias
+          path: registraduria/target/dependency-check-report.*
+          if-no-files-found: warn
