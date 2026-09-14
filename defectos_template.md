@@ -41,9 +41,9 @@ herramienta. Encontrar lo que el escaner ya senala no demuestra nada.
 Un defecto de seguridad no es "falta validacion". Eso es la ausencia de una
 defensa: no dice quien ataca, que consigue, ni por que importa.
 
-> ❌ "El endpoint de busqueda no valida la entrada."
+> **Mal:** "El endpoint de busqueda no valida la entrada."
 >
-> ✅ "Un usuario anonimo envia `' OR '1'='1` en el parametro `nombre` de
+> **Bien:** "Un usuario anonimo envia `' OR '1'='1` en el parametro `nombre` de
 > `/buscar` y obtiene el padron electoral completo, incluidos los numeros de
 > documento de todas las personas inscritas. No requiere autenticacion ni
 > conocimiento previo del sistema. Impacto alto, explotacion trivial."

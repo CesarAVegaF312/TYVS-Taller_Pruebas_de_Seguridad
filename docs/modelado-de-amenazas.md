@@ -132,12 +132,12 @@ autenticación, sin roles y sin auditoría no es desplegable.
 Al listar amenazas, casi todo el mundo escribe *controles* disfrazados de
 amenazas:
 
-> ❌ "No se validan las entradas."
+> **Mal:** "No se validan las entradas."
 
 Eso es la ausencia de una defensa, no una amenaza. No dice quién ataca, qué
 consigue, ni por qué importa. Comparado con:
 
-> ✅ "Un usuario anónimo envía `' OR '1'='1` en el parámetro `nombre` de
+> **Bien:** "Un usuario anónimo envía `' OR '1'='1` en el parámetro `nombre` de
 > `/buscar` y obtiene el padrón electoral completo, incluidos los documentos
 > de identidad de todas las personas inscritas."
 
