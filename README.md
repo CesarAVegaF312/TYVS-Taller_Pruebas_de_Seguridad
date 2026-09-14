@@ -15,7 +15,7 @@ cuando arreglar cualquier cosa ya es carísimo.
 
 ---
 
-## 🎯 Objetivos
+## Objetivos
 
 - **Modelar amenazas** con STRIDE y convertir el resultado en pruebas.
 - Escribir **casos de abuso** automatizados: inyección SQL, superficie
@@ -31,7 +31,7 @@ cuando arreglar cualquier cosa ya es carísimo.
 
 ---
 
-## 📑 Índice
+## Índice
 
 - [Sistema bajo prueba](#sistema-bajo-prueba)
 - [Puesta en marcha](#puesta-en-marcha)
@@ -53,7 +53,7 @@ Esa búsqueda está implementada **dos veces**, a propósito:
 | [`BuscadorSeguro`](registraduria/src/main/java/edu/unisabana/tyvs/registry/infrastructure/busqueda/BuscadorSeguro.java) | Consulta parametrizada + validación por lista blanca | Es la que la aplicación cablea de verdad |
 | [`BuscadorVulnerable`](registraduria/src/main/java/edu/unisabana/tyvs/registry/infrastructure/busqueda/BuscadorVulnerable.java) | Concatena la entrada dentro del SQL | Material didáctico: el módulo 2 la explota |
 
-> ⚠️ `BuscadorVulnerable` **no está expuesta por HTTP** y no hay ninguna
+> `BuscadorVulnerable` **no está expuesta por HTTP** y no hay ninguna
 > propiedad de configuración que la active. Es deliberado: un interruptor
 > tipo "modo inseguro" acaba encendido en producción algún viernes.
 
@@ -82,7 +82,7 @@ mvn clean verify
 Eso ejecuta todo: las pruebas de abuso, el análisis estático y la puerta de
 calidad. Debe terminar en `BUILD SUCCESS` con **21 pruebas** en verde.
 
-> ⏱️ El build tarda unos 3 minutos porque **SpotBugs corre dos veces**. No es
+> El build tarda unos 3 minutos porque **SpotBugs corre dos veces**. No es
 > un descuido: la primera pasada genera un informe *sin* exclusiones que el
 > módulo 3 necesita para comprobar que la herramienta detecta algo, y la
 > segunda es la puerta de calidad *con* exclusiones. Está explicado en el
@@ -203,7 +203,7 @@ build normal significaría que un `mvn verify` recién clonado tarda veinte
 minutos o falla por red. En un proyecto real esto vive en un **job nocturno**,
 exactamente por lo mismo.
 
-> 💡 El umbral está en `failBuildOnCVSS=7` (severidad alta). Por debajo se
+> El umbral está en `failBuildOnCVSS=7` (severidad alta). Por debajo se
 > registra pero no bloquea. Poner 0 suena responsable y produce el efecto
 > contrario: el equipo aprende a ignorar el rojo.
 
