@@ -3,8 +3,9 @@
 // Es opcional: el taller sigue funcionando con Java 17 y Maven instalados a mano.
 {
   "name": "TYVS - Taller de Pruebas de Seguridad",
-  // Java 17, la version con la que compila el proyecto y la que usa el CI.
-  "image": "mcr.microsoft.com/devcontainers/java:1-17-bookworm",
+  // Java 17 (mcr.microsoft.com/devcontainers/java:1-17-bookworm), la version
+  // con la que compila el proyecto. Ver Dockerfile: corrige una fuente apt rota.
+  "build": { "dockerfile": "Dockerfile" },
   "features": {
     // Maven sobre el JDK 17 que ya trae la imagen.
     "ghcr.io/devcontainers/features/java:1": { "version": "none", "installMaven": "true" },
