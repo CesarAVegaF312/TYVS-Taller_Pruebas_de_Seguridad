@@ -1,0 +1,52 @@
+name: ambiente
+
+# Verifica que el ambiente definido como codigo (.devcontainer y, si existe,
+# docker-compose.yml) se construye y funciona. Corre cuando cambia algo del
+# ambiente, y a mano desde la pestana Actions.
+on:
+  pull_request:
+    paths:
+      - '.devcontainer/**'
+      - '.github/workflows/ambiente.yml'
+      - 'docker-compose.yml'
+      - '**/Dockerfile'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  devcontainer:
+    name: Devcontainer se construye y la suite pasa adentro
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: devcontainers/ci@v0.3
+        with:
+          push: never
+          runCmd: cd registraduria && mvn -B test
+
+  compose:
+    name: Servicio y escaneo DAST con OWASP ZAP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: El archivo de compose es valido
+        run: docker compose config -q
+      - name: Levantar el ambiente
+        run: docker compose up -d --build --wait
+      - name: Escaneo pasivo con ZAP
+        run: docker compose --profile dast run --rm zap
+      - name: Publicar informe de ZAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-zap
+          path: informes-zap/
+          if-no-files-found: error
+      - name: Registros si algo fallo
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Apagar
+        if: always()
+        run: docker compose down -v

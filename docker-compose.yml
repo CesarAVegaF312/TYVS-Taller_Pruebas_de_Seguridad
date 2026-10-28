@@ -1,0 +1,38 @@
+# La Registraduria en un contenedor y, bajo demanda, un escaneo dinamico (DAST)
+# con OWASP ZAP contra el servicio en ejecucion.
+#
+#   docker compose up -d --wait                      # solo el servicio
+#   docker compose --profile dast run --rm zap       # escaneo pasivo (~2 min)
+#   docker compose down
+#
+# El informe queda en informes-zap/ (no se versiona, igual que los de SpotBugs).
+name: tyvs-seguridad
+
+services:
+  app:
+    build: ./registraduria
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    profiles: ["dast"]
+    # root para poder escribir el informe en la carpeta montada.
+    user: root
+    volumes:
+      - ./informes-zap:/zap/wrk:rw
+    # zap-baseline: arana la aplicacion y analiza las respuestas SIN atacarla
+    # (escaneo pasivo). -I: los avisos no hacen fallar el comando; el informe
+    # se lee, no se usa aqui como puerta de calidad.
+    command: >
+      zap-baseline.py -t http://app:8080 -I
+      -r zap-baseline.html -J zap-baseline.json
+    depends_on:
+      app:
+        condition: service_healthy
