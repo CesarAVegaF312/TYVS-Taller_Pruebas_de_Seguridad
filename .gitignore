@@ -9,6 +9,9 @@ target/
 # alguien acaba leyendo el de hace tres meses creyendo que es el de hoy.
 dependency-check-report.*
 spotbugs*.xml
+# Excepcion: el archivo de supresiones NO es un informe, es configuracion del
+# build (lo usa registraduria/pom.xml) y es parte del material del taller.
+!spotbugs-exclude.xml
 spotbugs*.html
 
 # IDE

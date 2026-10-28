@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ======================================================================
+     SUPRESIONES DE SPOTBUGS / FINDSECBUGS
+
+     Lo usa la puerta de calidad (goal `check`, fase verify) del pom.xml.
+     NO lo usa el informe sin exclusiones (target/spotbugs-sin-exclusiones.xml)
+     que lee SastDetectaLaVulnerabilidadTest: ese informe tiene que seguir
+     viendo la inyeccion SQL de BuscadorVulnerable.
+
+     Reglas para agregar una entrada (y es lo que se evalua en el taller):
+       1. Cada entrada lleva su justificacion escrita, aqui mismo.
+       2. Se acota lo mas posible: clase, metodo y tipo de hallazgo. Excluir un
+          PATRON en todo el proyecto apaga la deteccion para siempre.
+       3. Si arreglar el hallazgo es mas rapido que justificarlo, se arregla.
+          Asi se trataron DMI_EMPTY_DB_PASSWORD y HARD_CODE_PASSWORD, que por
+          eso NO aparecen aqui.
+     ====================================================================== -->
+<FindBugsFilter>
+
+  <!-- 1) La vulnerabilidad sembrada a proposito.
+
+       BuscadorVulnerable concatena la entrada del usuario en el SQL
+       (SQL_INJECTION_JDBC y SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE). Es
+       deliberado: el modulo 2 la explota con pruebas de abuso y el modulo 3
+       comprueba que SpotBugs la detecta. No se expone por HTTP: la aplicacion
+       cablea BuscadorSeguro.
+
+       Se excluye la CLASE, no el PATRON. Si alguien escribe otra inyeccion
+       SQL en cualquier otra clase, el build se pone rojo. -->
+  <Match>
+    <Class name="edu.unisabana.tyvs.registry.infrastructure.busqueda.BuscadorVulnerable"/>
+  </Match>
+
+  <!-- 2) SPRING_ENDPOINT en los controladores REST.
+
+       No es un defecto: findsecbugs marca cada metodo expuesto por HTTP para
+       que alguien inventarie la superficie de ataque. Ese inventario ya se
+       hace con pruebas (SuperficieExpuestaIT y los casos de abuso del
+       modulo 2), que son mas utiles que un aviso permanente en cada build.
+
+       Acotado al tipo de hallazgo y al paquete de entrega REST: un endpoint
+       nuevo fuera de este paquete vuelve a aparecer en el informe. -->
+  <Match>
+    <Bug pattern="SPRING_ENDPOINT"/>
+    <Package name="edu.unisabana.tyvs.registry.delivery.rest"/>
+  </Match>
+
+  <!-- 3) EI_EXPOSE_REP2 en el constructor de Registry.
+
+       SpotBugs avisa de que Registry guarda una referencia a un objeto
+       mutable recibido desde fuera (el puerto RegistryRepositoryPort). Es
+       exactamente lo que se busca con la inyeccion de dependencias: el caso
+       de uso debe compartir el repositorio que le entrega Spring, no una
+       copia. Copiarlo romperia el diseno sin ganar seguridad.
+
+       Acotado a la clase, al constructor y al tipo de hallazgo. -->
+  <Match>
+    <Class name="edu.unisabana.tyvs.registry.application.usecase.Registry"/>
+    <Method name="&lt;init&gt;"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+
+</FindBugsFilter>
