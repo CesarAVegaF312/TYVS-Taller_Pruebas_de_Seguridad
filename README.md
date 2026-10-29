@@ -347,3 +347,15 @@ Las vulnerabilidades de este repositorio son **deliberadas y están contenidas**
 en un entorno local sin datos reales. Existen para aprender a detectarlas.
 Aplicar estas técnicas contra sistemas de terceros sin autorización escrita es
 ilegal en Colombia (Ley 1273 de 2009) y en la mayoría de las jurisdicciones.
+
+---
+
+### Licencia de uso
+
+Este material se distribuye bajo la licencia [Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es).
+
+Puedes **usar, adaptar o compartir** este contenido con fines educativos, siempre que:
+
+1. Se reconozca la autoría del profesor **César Augusto Vega Fernández**.
+2. No se utilice con fines comerciales.
+3. Las obras derivadas se distribuyan bajo la misma licencia.
