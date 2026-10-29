@@ -1,0 +1,66 @@
+name: ambiente
+
+# Verifica que el ambiente definido como codigo (.devcontainer y, si existe,
+# docker-compose.yml) se construye y funciona. Corre cuando cambia algo del
+# ambiente, y a mano desde la pestana Actions.
+on:
+  pull_request:
+    paths:
+      - '.devcontainer/**'
+      - '.github/workflows/ambiente.yml'
+      - 'docker-compose.yml'
+      - '**/Dockerfile'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  devcontainer:
+    name: Devcontainer se construye y la suite pasa adentro
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # La CLI oficial de devcontainers, con version fija y la salida guardada:
+      # si algo falla, las lineas de error se publican como anotaciones del
+      # check, visibles en el PR sin abrir el log completo.
+      - name: Construir el devcontainer
+        run: |
+          set -o pipefail
+          npx -y @devcontainers/cli@0.89.0 up --workspace-folder . 2>&1 | tee construccion.log
+      - name: Correr la suite dentro del devcontainer
+        run: |
+          set -o pipefail
+          npx -y @devcontainers/cli@0.89.0 exec --workspace-folder . bash -lc "cd registraduria && mvn -B test" 2>&1 | tee suite.log
+      - name: Mostrar el error en el PR
+        if: failure()
+        run: |
+          for f in construccion.log suite.log; do
+            [ -f "$f" ] && grep -v '^\s*$' "$f" | grep -i -E 'error|fail|unable|denied|not found|E: ' | tail -n 15 | while IFS= read -r l; do echo "::error title=$f::${l:0:900}"; done
+          done
+          true
+
+  compose:
+    name: Servicio y escaneo DAST con OWASP ZAP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: El archivo de compose es valido
+        run: docker compose config -q
+      - name: Levantar el ambiente
+        run: docker compose up -d --build --wait
+      - name: Escaneo pasivo con ZAP
+        run: docker compose --profile dast run --rm zap
+      - name: Publicar informe de ZAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-zap
+          path: informes-zap/
+          if-no-files-found: error
+      - name: Registros si algo fallo
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Apagar
+        if: always()
+        run: docker compose down -v

@@ -19,3 +19,7 @@ spotbugs*.html
 # OS
 .DS_Store
 Thumbs.db
+
+# Informes de OWASP ZAP (docker compose --profile dast): se regeneran en cada
+# escaneo y, como los de SpotBugs, no se versionan.
+informes-zap/

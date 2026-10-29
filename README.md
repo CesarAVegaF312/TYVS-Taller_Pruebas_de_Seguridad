@@ -35,6 +35,7 @@ cuando arreglar cualquier cosa ya es carísimo.
 
 - [Sistema bajo prueba](#sistema-bajo-prueba)
 - [Puesta en marcha](#puesta-en-marcha)
+- [Ambiente de trabajo reproducible](#ambiente-de-trabajo-reproducible)
 - [Módulos del taller](#módulos-del-taller)
 - [Para entregar](#para-entregar-con-este-taller)
 - [Rúbrica](#rúbrica)
@@ -94,6 +95,33 @@ Para ver el informe de seguridad en detalle:
 mvn spotbugs:gui        # navegador gráfico de hallazgos
 cat target/spotbugsXml.xml
 ```
+
+---
+
+## Ambiente de trabajo reproducible
+
+El repositorio trae su **ambiente definido como código** en [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json): Java 17, Maven y un Docker propio dentro del contenedor, en las mismas versiones para todo el curso. Es **opcional**: si ya tiene todo instalado, siga con la puesta en marcha de siempre.
+
+- **GitHub Codespaces**, sin instalar nada: en la página del repositorio, *Code → Codespaces → Create codespace*. Se abre VS Code en el navegador. Consume la cuota gratuita de Codespaces: deténgalo al terminar.
+- **VS Code y Docker** en su equipo: instale la extensión *Dev Containers*, abra la carpeta del repositorio y elija *Reopen in Container*.
+
+Al crearse, el ambiente compila el proyecto una vez para descargar las dependencias. Después `mvn verify` funciona igual que en su equipo.
+
+> **Por qué importa.** "En mi máquina funciona" casi siempre es una diferencia de ambiente: otra versión de Java, de Maven, del navegador o del sistema operativo. Un ambiente versionado junto al código elimina esa variable. El workflow [`ambiente.yml`](.github/workflows/ambiente.yml) lo comprueba: construye el contenedor y corre la suite dentro de él.
+
+### Para ir más allá: DAST con OWASP ZAP
+
+Los módulos 3 y 4 analizan el código (SAST) y las dependencias (SCA) **sin ejecutar** la aplicación. El análisis dinámico (DAST) hace lo contrario: ataca el servicio **en ejecución** desde afuera, como lo haría un atacante, sin mirar el código. [`docker-compose.yml`](docker-compose.yml) lo deja a un comando:
+
+```bash
+docker compose up -d --wait                    # la Registraduría en un contenedor
+docker compose --profile dast run --rm zap     # escaneo pasivo con ZAP (unos 2 minutos)
+docker compose down
+```
+
+El informe queda en `informes-zap/zap-baseline.html`, y no se versiona, por la misma razón que los de SpotBugs. `zap-baseline` es un escaneo **pasivo**: recorre la aplicación y analiza las respuestas (cabeceras, cookies, divulgación de información), pero no inyecta nada. Por eso **no** encontrará la inyección SQL de `BuscadorVulnerable`, que además no se expone por HTTP. Que una herramienta no encuentre algo no significa que no esté, y eso es parte de lo que enseña el módulo 3.
+
+> Escanee solo sus propios servicios. Un escaneo, incluso pasivo, contra un sistema de terceros sin autorización escrita es ilegal (ver la advertencia de [Créditos y uso académico](#créditos-y-uso-académico)).
 
 ---
 

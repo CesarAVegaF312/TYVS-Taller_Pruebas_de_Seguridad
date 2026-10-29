@@ -1,0 +1,28 @@
+// Ambiente de trabajo del taller, definido como codigo.
+// Se usa desde GitHub Codespaces o con VS Code + la extension Dev Containers.
+// Es opcional: el taller sigue funcionando con Java 17 y Maven instalados a mano.
+{
+  "name": "TYVS - Taller de Pruebas de Seguridad",
+  // Java 17 (mcr.microsoft.com/devcontainers/java:1-17-bookworm), la version
+  // con la que compila el proyecto. Ver Dockerfile: corrige una fuente apt rota.
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    // Maven sobre el JDK 17 que ya trae la imagen.
+    "ghcr.io/devcontainers/features/java:1": { "version": "none", "installMaven": "true" },
+    // Docker propio dentro del contenedor (docker-in-docker): lo usan
+    // Testcontainers y docker compose sin depender del Docker del equipo.
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "Registraduría" }
+  },
+  // Descarga las dependencias una vez, al crear el ambiente, y no en la
+  // primera prueba que se ejecute.
+  "postCreateCommand": "cd registraduria && mvn -B -q -DskipTests -Dspotbugs.skip=true package",
+  "customizations": {
+    "vscode": {
+      "extensions": ["vscjava.vscode-java-pack"]
+    }
+  }
+}
