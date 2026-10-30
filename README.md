@@ -259,6 +259,11 @@ exactamente por lo que el módulo 3 existe.
 
 ## PARA ENTREGAR CON ESTE TALLER
 
+> **Ejercicio y proyecto.** Este taller es el **ejercicio** de la unidad 4: un pipeline de GitHub Actions con una puerta de calidad que rompe el build. Se entrega sobre la Registraduría. Lo que se lleva al **caso de su equipo** (ver el [catálogo de casos](https://github.com/CesarAVegaF312/TYVS-Proyecto_Pruebas_Unitarias/blob/master/casos/README.md)):
+>
+> - El pipeline de CI del [Proyecto de Pruebas de Integración](https://github.com/CesarAVegaF312/TYVS-Proyecto_Pruebas_Integracion). La puerta SAST de este taller es recomendada allí.
+> - El endpoint de búsqueda que tiene cada ficha, que es el candidato natural para escribir casos de abuso.
+
 ### 1) Repositorio
 
 - El proyecto completo, con `mvn clean verify` en verde tras un clon limpio.
