@@ -15,7 +15,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>17</maven.compiler.release>
-    <spring-boot.version>2.7.18</spring-boot.version>
+    <spring-boot.version>4.1.2</spring-boot.version>
     <spotbugs.plugin.version>4.8.6.4</spotbugs.plugin.version>
     <findsecbugs.version>1.13.0</findsecbugs.version>
     <dependency-check.version>10.0.4</dependency-check.version>
@@ -24,7 +24,7 @@
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
 
     <!-- Necesaria para @Valid sobre @RequestBody. Desde Spring Boot 2.3 ya no
@@ -46,13 +46,19 @@
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
-      <version>2.2.224</version>
       <scope>runtime</scope>
     </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- MockMvc (@AutoConfigureMockMvc). Desde Spring Boot 4 vive en su propio
+         modulo de pruebas web, separado de spring-boot-starter-test. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -71,13 +77,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.5</version>
+        <version>3.5.6</version>
       </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.2.5</version>
+        <version>3.5.6</version>
         <configuration>
           <classesDirectory>${project.build.outputDirectory}</classesDirectory>
         </configuration>

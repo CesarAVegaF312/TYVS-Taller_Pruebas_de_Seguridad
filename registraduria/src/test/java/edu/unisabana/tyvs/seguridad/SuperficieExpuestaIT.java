@@ -3,7 +3,7 @@ package edu.unisabana.tyvs.seguridad;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
@@ -144,7 +144,9 @@ class SuperficieExpuestaIT {
 
         String cuerpo = r.getResponse().getContentAsString();
 
-        assertFalse(cuerpo.contains("com.fasterxml"),
+        // Jackson 3 (Spring Boot 4) vive en tools.jackson; sus anotaciones siguen
+        // en com.fasterxml. Cualquiera de los dos en la respuesta es una fuga.
+        assertFalse(cuerpo.contains("com.fasterxml") || cuerpo.contains("tools.jackson"),
                 "La respuesta revela que se usa Jackson y su version: " + cuerpo);
         assertFalse(cuerpo.contains("\tat "), "La respuesta contiene una traza: " + cuerpo);
     }
