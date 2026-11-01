@@ -8,6 +8,9 @@ on:
     paths:
       - '.devcontainer/**'
       - '.github/workflows/ambiente.yml'
+      # Actualizar dependencias tambien cambia el ambiente: debe volver a
+      # comprobarse que se construye y que la suite pasa adentro.
+      - '**/pom.xml'
       - 'docker-compose.yml'
       - '**/Dockerfile'
   workflow_dispatch:
